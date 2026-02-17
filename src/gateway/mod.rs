@@ -1,9 +1,9 @@
 mod connection;
 mod gateway;
 mod heartbeat;
-mod identitfy;
+mod identify;
 
 pub use connection::Connection;
 pub use gateway::Gateway;
 pub use heartbeat::Heartbeat;
-pub use identitfy::Identify;
+pub use identify::Identify;
