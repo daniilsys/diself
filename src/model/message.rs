@@ -3,8 +3,10 @@ use super::{
     Reaction, User,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum MessageType {
     Default = 0,
@@ -48,60 +50,60 @@ pub enum MessageType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    // Unique ID of the message
+    /// Unique ID of the message
     pub id: String,
 
-    // ID of the channel the message was sent in
+    /// ID of the channel the message was sent in
     pub channel_id: String,
 
-    // Author of the message
+    /// Author of the message
     pub author: User,
 
-    // Content of the message
+    /// Content of the message
     pub content: String,
 
-    // Timestamp of when the message was sent
+    /// Timestamp of when the message was sent
     pub timestamp: String,
 
-    // Edit timestamp (if the message was edited)
+    /// Edit timestamp (if the message was edited)
     pub edited_timestamp: Option<String>,
 
-    // Whether the message is TTS
+    /// Whether the message is TTS
     #[serde(default)]
     pub tts: bool,
 
-    // Whether the message mentions everyone
+    /// Whether the message mentions everyone
     #[serde(default)]
     pub mention_everyone: bool,
 
-    // Users mentioned in the message
+    /// Users mentioned in the message
     #[serde(default)]
     pub mentions: Vec<User>,
 
-    // Roles mentioned in the message
+    /// Roles mentioned in the message
     #[serde(default)]
     pub mention_roles: Vec<String>,
 
-    // Channels mentioned in the message
+    /// Channels mentioned in the message
     #[serde(default)]
     pub mention_channels: Vec<ChannelMention>,
 
-    // Attachments in the message
+    /// Attachments in the message
     #[serde(default)]
     pub attachments: Vec<Attachment>,
 
-    // Embeds in the message
+    /// Embeds in the message
     #[serde(default)]
     pub embeds: Vec<Embed>,
 
-    // Reactions to the message
+    /// Reactions to the message
     #[serde(default)]
     pub reactions: Vec<Reaction>,
 
-    // Nonce of the message (if it's a bot message)
+    /// Nonce of the message (if it's a bot message)
     pub nonce: Option<String>,
 
-    // Whether the message is pinned
+    /// Whether the message is pinned
     #[serde(default)]
     pub pinned: bool,
 
@@ -276,4 +278,132 @@ pub struct Sticker {
 
     // The sort order of the sticker in the pack
     pub sort_value: Option<u64>,
+}
+
+impl Message {
+    /// Checks if the message starts with a prefix
+    pub fn starts_with(&self, prefix: &str) -> bool {
+        self.content.starts_with(prefix)
+    }
+
+    /// Helper method to check if the message is a reply
+    pub fn is_reply(&self) -> bool {
+        self.message_reference.is_some()
+    }
+
+    /// Parses message as command + arguments
+    pub fn parse_command(&self, prefix: &str) -> Option<(&str, Vec<&str>)> {
+        let content = self.content.strip_prefix(prefix)?.trim();
+        let mut parts = content.split_whitespace();
+        let command = parts.next()?;
+        let args: Vec<&str> = parts.collect();
+        Some((command, args))
+    }
+
+    /// Gets the channel this message was sent in
+    ///
+    /// # Example
+    /// ```no_run
+    /// let channel = msg.channel(&ctx.http).await?;
+    /// println!("Message was sent in channel: {}", channel.name);
+    /// ```
+    pub async fn channel(&self, http: &crate::http::HttpClient) -> Option<Channel> {
+        let url = crate::http::api_url(&format!("/channels/{}", self.channel_id));
+        if let Ok(response) = http.get(&url).await {
+            if let Ok(channel) = serde_json::from_value(response) {
+                return Some(channel);
+            }
+        }
+        None
+    }
+
+    /// Replies to the message
+    ///
+    /// # Example
+    /// ```no_run
+    /// msg.reply(&ctx.http, "This is a reply!").await?;
+    /// ```
+    pub async fn reply(
+        &self,
+        http: &crate::http::HttpClient,
+        content: impl Into<String>,
+    ) -> crate::Result<Message> {
+        let url = crate::http::api_url(&format!("/channels/{}/messages", self.channel_id));
+        let body = json!({
+            "content": content.into(),
+            "message_reference": {
+                "message_id": self.id,
+                "channel_id": self.channel_id,
+                "fail_if_not_exists": false
+            }
+        });
+        let response = http.post(&url, body).await?;
+        let message: Message = serde_json::from_value(response)?;
+        Ok(message)
+    }
+
+    /// Edits the message
+    pub async fn edit(
+        &self,
+        http: &crate::http::HttpClient,
+        new_content: impl Into<String>,
+    ) -> crate::Result<Message> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}",
+            self.channel_id, self.id
+        ));
+        let body = serde_json::json!({
+            "content": new_content.into()
+        });
+        let response = http.patch(&url, body).await?;
+        let message: Message = serde_json::from_value(response)?;
+        Ok(message)
+    }
+
+    /// Deletes the message
+    pub async fn delete(&self, http: &crate::http::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}",
+            self.channel_id, self.id
+        ));
+        http.delete(&url).await?;
+        Ok(())
+    }
+
+    /// Adds a reaction to the message
+    ///
+    /// # Example
+    /// ```no_run
+    /// msg.react(&ctx.http, "👍").await?
+    /// ```
+    pub async fn react(
+        &self,
+        http: &crate::http::HttpClient,
+        emoji: impl AsRef<str>,
+    ) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}/reactions/{}/@me",
+            self.channel_id,
+            self.id,
+            emoji.as_ref()
+        ));
+        http.put(&url, json!({})).await?;
+        Ok(())
+    }
+
+    /// Removes a reaction from the message
+    pub async fn remove_reaction(
+        &self,
+        http: &crate::http::HttpClient,
+        emoji: impl AsRef<str>,
+    ) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}/reactions/{}/@me",
+            self.channel_id,
+            self.id,
+            emoji.as_ref()
+        ));
+        http.delete(&url).await?;
+        Ok(())
+    }
 }

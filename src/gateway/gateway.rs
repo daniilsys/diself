@@ -37,6 +37,10 @@ impl Gateway {
             "op": 2,
             "d": identify,
         });
+        tracing::debug!(
+            "IDENTIFY payload: {}",
+            serde_json::to_string_pretty(&identify_payload).unwrap_or_default()
+        );
         connection.send(&identify_payload).await?;
         tracing::info!("Sent IDENTIFY payload");
 

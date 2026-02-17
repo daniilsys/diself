@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
+
+use crate::{HttpClient, Message, User};
 
 // Represents a Discord channel (text, voice, DM, etc.)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum ChannelType {
     GuildText = 0,
@@ -58,7 +61,7 @@ pub struct Channel {
     pub rate_limit_per_user: Option<u64>,
 
     // recipients (for DM channels)
-    pub recipients: Option<Vec<String>>,
+    pub recipients: Option<Vec<User>>,
 
     // Icon hash (for group DM channels)
     pub icon: Option<String>,
@@ -123,16 +126,64 @@ pub struct Channel {
 }
 
 impl Channel {
+    /// Helper method to check if the channel is a DM or Group DM
     pub fn is_dm(&self) -> bool {
         matches!(self.kind, ChannelType::DM | ChannelType::GroupDM)
     }
 
+    /// Helper method to get the mention string for the channel
     pub fn mention(&self) -> String {
         if self.is_dm() {
             format!("<@{}>", self.id)
         } else {
             format!("<#{}>", self.id)
         }
+    }
+    /// Get the guild for this channel (if applicable)
+    ///
+    /// # Example
+    /// ```no_run
+    /// use discord_selfbot_rs::{HttpClient, model::channel::Channel};
+    ///
+    /// async fn example(http: &HttpClient, channel: &Channel) {
+    ///     if let Some(guild) = channel.guild(http).await {
+    ///         println!("Channel is in guild: {}", guild.name);
+    ///     } else {
+    ///         println!("Channel is not in a guild");
+    ///     }
+    /// }
+    /// ```
+    pub async fn guild(&self, http: &HttpClient) -> Option<crate::model::guild::Guild> {
+        if let Some(guild_id) = &self.guild_id {
+            let url = crate::http::api_url(&format!("/guilds/{}", guild_id));
+            if let Ok(response) = http.get(&url).await {
+                match serde_json::from_value(response) {
+                    Ok(guild) => return Some(guild),
+                    Err(e) => {
+                        eprintln!("Failed to deserialize guild: {}", e);
+                        return None;
+                    }
+                }
+            }
+            None
+        } else {
+            None
+        }
+    }
+    /// Sends a message to this channel
+    pub async fn send(
+        &self,
+        http: &HttpClient,
+        content: impl Into<String>,
+    ) -> Result<Message, crate::error::Error> {
+        let url = crate::http::api_url(&format!("/channels/{}/messages", self.id));
+        let body = serde_json::json!({
+            "content": content.into()
+        });
+
+        let response = http.post(&url, body).await?;
+        let message: Message = serde_json::from_value(response)?;
+        Ok(message)
     }
 }
 

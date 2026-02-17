@@ -18,6 +18,10 @@ pub struct Identify {
 
     // Client capability (essential for selfbots)
     pub capabilities: u32,
+
+    // Gateway intents (what events we want to receive)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub intents: Option<u32>,
 }
 
 // Connection properties sent in the Identify payload
@@ -26,6 +30,7 @@ pub struct ConnectionProperties {
     // Operation System (e.g., "Windows", "Linux", "macOS")
     #[serde(rename = "$os")]
     pub os: String,
+
     // Browser (must be "Discord Selfbot" for selfbots)
     #[serde(rename = "$browser")]
     pub browser: String,
@@ -126,12 +131,25 @@ pub struct Activity {
 
 impl Identify {
     pub fn new(token: impl Into<String>) -> Self {
+        // Intents pour recevoir tous les messages:
+        // GUILDS (1 << 0) = 1
+        // GUILD_MEMBERS (1 << 1) = 2
+        // GUILD_MESSAGES (1 << 9) = 512
+        // GUILD_MESSAGE_REACTIONS (1 << 10) = 1024
+        // DIRECT_MESSAGES (1 << 12) = 4096
+        // DIRECT_MESSAGE_REACTIONS (1 << 13) = 8192
+        // MESSAGE_CONTENT (1 << 15) = 32768
+        // Total: 1 + 2 + 512 + 1024 + 4096 + 8192 + 32768 = 46595
+        // Ou utiliser tous les intents: 3276799 (ou 53608447 avec intents privilégiés)
+        let intents = 3276799; // Tous les intents non-privilégiés
+
         Self {
             token: token.into(),
             properties: ConnectionProperties::default_client(),
             presence: Some(PresenceUpdate::default()),
             compress: Some(false),
             capabilities: 16381, // Standard capabilities for Discord clients
+            intents: Some(intents),
         }
     }
 }
