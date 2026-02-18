@@ -1,5 +1,5 @@
-use discord_selfbot::gateway::Connection;
-use discord_selfbot::Result;
+use diself::gateway::Connection;
+use diself::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {

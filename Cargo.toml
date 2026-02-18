@@ -1,14 +1,15 @@
 [package]
-name = "discord-selfbot"
+name = "diself"
 version = "0.1.0"
 edition = "2021"
 authors = ["daniilsys"]
 license = "MIT"
-repository = "https://github.com/daniilsys/discord-selfbot-rs"
-documentation = "https://docs.rs/discord-selfbot-rs"
+repository = "https://github.com/daniilsys/diself"
+documentation = "https://docs.rs/diself"
 description = "A Discord self-bot library for Rust"
 keywords = ["discord", "selfbot", "api", "async"]
 categories = ["api-bindings", "asynchronous"]
+
 
 [dependencies]
 # Async runtime

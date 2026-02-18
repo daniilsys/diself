@@ -44,6 +44,17 @@ pub struct User {
     /// Email (only for the current user, requires "email" scope)
     pub email: Option<String>,
 
+    /// Phone number (only for the current user, requires "phone" scope)
+    pub phone: Option<String>,
+
+    /// Whether the use has used the desktop client before
+    #[serde(default)]
+    pub desktop: bool,
+
+    /// Whether the user has used the mobile client before
+    #[serde(default)]
+    pub mobile: bool,
+
     /// Flags (bitfield representing user features)
     pub flags: Option<u64>,
 
@@ -58,7 +69,7 @@ pub struct User {
 
     /// Data for the user's collectibles (if any)
     #[serde(default)]
-    pub collectibles: Option<Vec<Nameplate>>,
+    pub collectibles: Option<Nameplate>,
 
     /// The user's primary guild
     #[serde(default)]
@@ -134,6 +145,9 @@ pub struct Nameplate {
 
     /// Background color of the nameplate (crimson, berry, sky, teal, forest, bubble_gum, violet, cobalt, clover, lemon, white)
     pub palette: String,
+
+    /// Unix timestamp of when the current nameplate expires (if any)
+    pub expires_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

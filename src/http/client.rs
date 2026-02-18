@@ -7,7 +7,13 @@ use std::time::Duration;
 
 /// Type for captcha handler callback
 /// Takes captcha info and returns the solved captcha key
-pub type CaptchaHandler = Arc<dyn Fn(CaptchaInfo) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String>> + Send>> + Send + Sync>;
+pub type CaptchaHandler = Arc<
+    dyn Fn(
+            CaptchaInfo,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<String>> + Send>>
+        + Send
+        + Sync,
+>;
 
 /// Minimal HTTP client for Discord API
 #[derive(Clone)]
@@ -90,7 +96,7 @@ impl HttpClient {
             .client
             .request(method.clone(), url)
             .header("Authorization", &self.token)
-            .header("User-Agent", "DiscordBot (discord-bot-rs, 0.1.0)");
+            .header("User-Agent", "Discord Client (diself, 0.1.0)");
 
         // Prepare body with captcha key if provided
         if let Some(body) = body {
@@ -107,13 +113,16 @@ impl HttpClient {
         }
 
         let response = request.send().await?;
-        
+
         // Handle response, check for captcha
         match self.handle_response(response).await {
             Err(Error::CaptchaRequired(captcha_info)) => {
                 // Try to solve captcha if handler is available
                 if let Some(ref handler) = self.captcha_handler {
                     tracing::info!("Captcha required, calling handler...");
+                    // Clone the fields we need before moving captcha_info
+                    let session_id = captcha_info.captcha_session_id.clone();
+                    let rqtoken = captcha_info.captcha_rqtoken.clone();
                     let solved_key = handler(captcha_info).await?;
                     tracing::info!("Captcha solved, retrying request...");
                     // Retry the request with the captcha key using Box::pin for recursion
@@ -122,7 +131,15 @@ impl HttpClient {
                     } else {
                         None
                     };
-                    return Box::pin(self.request_with_captcha_value(method, url, body_json, Some(solved_key))).await;
+                    return Box::pin(self.request_with_captcha_value(
+                        method,
+                        url,
+                        body_json,
+                        Some(solved_key),
+                        session_id,
+                        rqtoken,
+                    ))
+                    .await;
                 } else {
                     // No handler available
                     return Err(Error::CaptchaRequired(captcha_info));
@@ -139,12 +156,22 @@ impl HttpClient {
         url: &str,
         body: Option<Value>,
         captcha_key: Option<String>,
+        captcha_session_id: Option<String>,
+        captcha_rqtoken: Option<String>,
     ) -> Result<Value> {
         let mut request = self
             .client
             .request(method, url)
             .header("Authorization", &self.token)
-            .header("User-Agent", "DiscordBot (discord-bot-rs, 0.1.0)");
+            .header("User-Agent", "Discord Client (diself, 0.1.0)")
+            .header("X-Captcha-Key", captcha_key.clone().unwrap_or_default());
+
+        if let Some(session_id) = captcha_session_id {
+            request = request.header("X-Captcha-Session-Id", session_id);
+        }
+        if let Some(rqtoken) = captcha_rqtoken {
+            request = request.header("X-Captcha-RqToken", rqtoken);
+        }
 
         // Prepare body with captcha key if provided
         if let Some(mut json_body) = body {
@@ -183,7 +210,7 @@ impl HttpClient {
         } else if status == StatusCode::BAD_REQUEST {
             // Check if it's a captcha error
             let json = response.json::<Value>().await?;
-            
+
             if json.get("captcha_sitekey").is_some() {
                 // It's a captcha error, try to deserialize
                 match serde_json::from_value::<CaptchaInfo>(json.clone()) {

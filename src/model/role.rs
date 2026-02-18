@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use super::Permissions;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Role {
@@ -31,7 +32,7 @@ pub struct Role {
 
     /// Permissions bitfield representing the permissions granted by this role
     #[serde(default)]
-    pub permissions: String,
+    pub permissions: Permissions,
 
     /// Whether the role is managed by an integration (e.g., Twitch, YouTube)
     #[serde(default)]

@@ -3,17 +3,24 @@ mod embed;
 mod guild;
 mod interaction;
 mod message;
+mod permissions;
 mod poll;
 mod reaction;
+mod relationship;
 mod role;
 mod user;
 
-pub use channel::Channel;
-pub use embed::Embed;
-pub use guild::Guild;
+pub use channel::{Channel, ChannelMention, ChannelType};
+pub use embed::{
+    Embed, EmbedAuthor, EmbedField, EmbedFooter, EmbedImage, EmbedProvider, EmbedThumbnail,
+    EmbedVideo,
+};
+pub use guild::{Guild, Member};
 pub use interaction::Interaction;
-pub use message::Message;
+pub use message::{Attachment, Message, MessageActivity, MessageType, Sticker};
+pub use permissions::{PermissionOverwrite, PermissionOverwriteType, Permissions};
 pub use poll::Poll;
-pub use reaction::Reaction;
-pub use role::Role;
-pub use user::User;
+pub use reaction::{Emoji, Reaction};
+pub use relationship::Relationship;
+pub use role::{Role, RoleColors, RoleTags};
+pub use user::{Nameplate, User};

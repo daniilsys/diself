@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
+use super::{PermissionOverwrite, Permissions};
 use crate::{HttpClient, Message, User};
 
-// Represents a Discord channel (text, voice, DM, etc.)
+/// Represents a Discord channel (text, voice, DM, etc.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum ChannelType {
@@ -23,106 +24,179 @@ pub enum ChannelType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Channel {
-    // Unique ID of the channel
+    /// Unique ID of the channel
     pub id: String,
 
-    // Type of the channel (text, voice, DM, etc.)
+    /// Type of the channel (text, voice, DM, etc.)
     #[serde(rename = "type")]
     pub kind: ChannelType,
 
-    // Id of the guild (if applicable)
+    /// Id of the guild (if applicable)
     pub guild_id: Option<String>,
 
-    // Position of the channel in the guild (if applicable)
+    /// Position of the channel in the guild (if applicable)
     pub position: Option<i32>,
 
-    // !!!!!! TODO permissions_overwrites !!!!!!!
+    /// Explicit permission overwrites for roles/users in this channel
+    #[serde(default)]
+    pub permission_overwrites: Vec<PermissionOverwrite>,
 
-    // Name of the channel (if applicable)
+    /// Name of the channel (if applicable)
     pub name: Option<String>,
 
-    // Topic of the channel (if applicable)
+    /// Topic of the channel (if applicable)
     pub topic: Option<String>,
 
-    // Whether the channel is NSFW (if applicable)
+    /// Whether the channel is NSFW (if applicable)
     #[serde(default)]
     pub nsfw: bool,
 
-    // Id of the last message sent in the channel (if applicable)
+    /// Id of the last message sent in the channel (if applicable)
     pub last_message_id: Option<String>,
 
-    // Bitrate (for voice channels)
+    /// Bitrate (for voice channels)
     pub bitrate: Option<u64>,
 
-    // User limit (for voice channels)
+    /// User limit (for voice channels)
     pub user_limit: Option<u64>,
 
-    // Rate limit per user (for text channels)
+    /// Rate limit per user (for text channels)
     pub rate_limit_per_user: Option<u64>,
 
-    // recipients (for DM channels)
+    /// recipients (for DM channels)
     pub recipients: Option<Vec<User>>,
 
-    // Icon hash (for group DM channels)
+    /// Icon hash (for group DM channels)
     pub icon: Option<String>,
 
-    // Owner ID (for group DM channels)
+    /// Owner ID (for group DM channels)
     pub owner_id: Option<String>,
 
-    // Application ID (for group DM channels)
+    /// Application ID (for group DM channels)
     pub application_id: Option<String>,
 
-    // Whether the channel is managed
+    /// Whether the channel is managed
     #[serde(default)]
     pub managed: bool,
 
-    // Channel's parent category ID (if applicable)
+    /// Channel's parent category ID (if applicable)
     pub parent_id: Option<String>,
 
-    // The channel's last pinned message ID (if applicable)
+    /// The channel's last pinned message ID (if applicable)
     pub last_pin_timestamp: Option<String>,
 
-    // The channel's rtc region (for voice channels)
+    /// The channel's rtc region (for voice channels)
     pub rtc_region: Option<String>,
 
-    // The channel's video quality mode (for voice channels)
+    /// The channel's video quality mode (for voice channels)
     pub video_quality_mode: Option<u8>,
 
-    // The channel's message count (for threads)
+    /// The channel's message count (for threads)
     pub message_count: Option<u64>,
 
-    // The channel's member count (for threads)
+    /// The channel's member count (for threads)
     pub member_count: Option<u64>,
 
-    // Thread metdata
+    /// Thread metdata
     pub thread_metadata: Option<ThreadMetadata>,
 
-    // Thread member object (for threads the current user has joined)
+    /// Thread member object (for threads the current user has joined)
     pub member: Option<ThreadMember>,
 
-    // Default auto archive duration for threads in this channel (if applicable)
+    /// Default auto archive duration for threads in this channel (if applicable)
     pub default_auto_archive_duration: Option<u64>,
 
-    // Permissions (for threads)
-    pub permissions: Option<String>,
+    /// Permissions (for threads)
+    pub permissions: Option<Permissions>,
 
-    // Flags
+    /// Flags
     pub flags: Option<u64>,
 
-    // Total number of messages in the thread, even when messages are deleted (if applicable)
+    /// Total number of messages in the thread, even when messages are deleted (if applicable)
     pub total_messages: Option<u64>,
 
-    // Available tags in a guild forum channel
+    /// Available tags in a guild forum channel
     pub available_tags: Option<Vec<ForumTag>>,
 
-    // Applied tags IDs in a thread in a guild forum channel
+    /// Applied tags IDs in a thread in a guild forum channel
     pub applied_tags: Option<Vec<String>>,
 
-    // Default sort order type for a guild forum channel
+    /// Default sort order type for a guild forum channel
     pub default_sort_order: Option<u8>,
 
-    // Default forum layout view for a guild forum channel
+    /// Default forum layout view for a guild forum channel
     pub default_forum_layout: Option<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelMention {
+    /// Unique ID of the channel
+    pub id: String,
+
+    /// Id of the guild the channel belongs to
+    pub guild_id: String,
+
+    /// Name of the channel
+    pub name: String,
+
+    /// Type of the channel (text, voice, DM, etc.)
+    #[serde(rename = "type")]
+    pub kind: ChannelType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ForumTag {
+    /// The id of the tag
+    pub id: String,
+
+    /// The name of the tag
+    pub name: String,
+
+    /// Moderated (whether users can add this tag to their threads)
+    pub moderated: bool,
+
+    /// Custom emoji ID associated with the tag (if any)
+    pub emoji_id: Option<String>,
+
+    /// Emoji name associated with the tag (if any, used if emoji_id is null)
+    pub emoji_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThreadMember {
+    /// The ID of the thread
+    #[serde(rename = "id")]
+    pub thread_id: String,
+
+    /// The ID of the user
+    pub user_id: String,
+
+    /// The timestamp when the user joined the thread
+    pub join_timestamp: String,
+
+    /// The flags for the user in the thread
+    pub flags: u64,
+    // TODO: GUILD + MEMBER
+    // Guild member object (if the thread is in a guild and the user is a member of that guild)
+    // pub member: Option<GuildMember>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThreadMetadata {
+    /// Whether the thread is archived
+    pub archived: bool,
+
+    /// Timestamp when the thread was archived
+    pub archive_timestamp: String,
+
+    /// Whether the thread is locked
+    pub locked: bool,
+
+    /// Whether non-moderators can unarchive the thread
+    pub invitable: Option<bool>,
+
+    /// Create Timestamp of the thread (for threads created before 2022-01-09)
+    pub create_timestamp: Option<String>,
 }
 
 impl Channel {
@@ -142,8 +216,8 @@ impl Channel {
     /// Get the guild for this channel (if applicable)
     ///
     /// # Example
-    /// ```no_run
-    /// use discord_selfbot_rs::{HttpClient, model::channel::Channel};
+    /// ```ignore
+    /// use diself::{HttpClient, model::channel::Channel};
     ///
     /// async fn example(http: &HttpClient, channel: &Channel) {
     ///     if let Some(guild) = channel.guild(http).await {
@@ -185,70 +259,19 @@ impl Channel {
         let message: Message = serde_json::from_value(response)?;
         Ok(message)
     }
-}
+    /// Edit the channel's name (if applicable)
+    pub async fn edit_name(
+        &self,
+        http: &HttpClient,
+        new_name: impl Into<String>,
+    ) -> Result<Channel, crate::error::Error> {
+        let url = crate::http::api_url(&format!("/channels/{}", self.id));
+        let body = serde_json::json!({
+            "name": new_name.into()
+        });
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChannelMention {
-    pub id: String,
-
-    pub guild_id: String,
-
-    pub name: String,
-
-    #[serde(rename = "type")]
-    pub kind: ChannelType,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ForumTag {
-    // The id of the tag
-    pub id: String,
-
-    // The name of the tag
-    pub name: String,
-
-    // Moderated (whether users can add this tag to their threads)
-    pub moderated: bool,
-
-    // Custom emoji ID associated with the tag (if any)
-    pub emoji_id: Option<String>,
-
-    // Emoji name associated with the tag (if any, used if emoji_id is null)
-    pub emoji_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ThreadMember {
-    // The ID of the thread
-    pub thread_id: String,
-
-    // The ID of the user
-    pub user_id: String,
-
-    // The timestamp when the user joined the thread
-    pub join_timestamp: String,
-
-    // The flags for the user in the thread
-    pub flags: u64,
-    // TODO: GUILD + MEMBER
-    // Guild member object (if the thread is in a guild and the user is a member of that guild)
-    // pub member: Option<GuildMember>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ThreadMetadata {
-    // Whether the thread is archived
-    pub archived: bool,
-
-    // Timestamp when the thread was archived
-    pub archive_timestamp: String,
-
-    // Whether the thread is locked
-    pub locked: bool,
-
-    // Whether non-moderators can unarchive the thread
-    pub invitable: Option<bool>,
-
-    // Create Timestamp of the thread (for threads created before 2022-01-09)
-    pub create_timestamp: Option<String>,
+        let response = http.patch(&url, body).await?;
+        let updated_channel: Channel = serde_json::from_value(response)?;
+        Ok(updated_channel)
+    }
 }

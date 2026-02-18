@@ -13,10 +13,10 @@ pub enum InteractionType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Interaction {
-    // Unique ID of the interaction
+    /// Unique ID of the interaction
     pub id: String,
 
-    // Type of the interaction
+    /// Type of the interaction
     #[serde(rename = "type")]
     pub kind: InteractionType,
     // TODO

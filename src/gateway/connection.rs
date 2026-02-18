@@ -51,4 +51,9 @@ impl Connection {
         self.ws.send(Message::Text(text)).await?;
         Ok(())
     }
+
+    pub async fn close(&mut self) -> Result<()> {
+        self.ws.close(None).await?;
+        Ok(())
+    }
 }

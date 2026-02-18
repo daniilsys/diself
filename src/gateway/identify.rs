@@ -3,23 +3,23 @@ use serde::{Deserialize, Serialize};
 //Authentication payload for Discord Gateway
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Identify {
-    // User Discord token
+    /// User Discord token
     pub token: String,
 
-    // Connection properties (OS, browser, device)
+    /// Connection properties (OS, browser, device)
     pub properties: ConnectionProperties,
 
-    // Initial presence (optional)
+    /// Initial presence (optional)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub presence: Option<PresenceUpdate>,
 
-    // Compression (must be false for selfbots)
+    /// Compression (must be false for selfbots)
     pub compress: Option<bool>,
 
-    // Client capability (essential for selfbots)
+    /// Client capability (essential for selfbots)
     pub capabilities: u32,
 
-    // Gateway intents (what events we want to receive)
+    /// Gateway intents (what events we want to receive)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub intents: Option<u32>,
 }
@@ -27,43 +27,43 @@ pub struct Identify {
 // Connection properties sent in the Identify payload
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionProperties {
-    // Operation System (e.g., "Windows", "Linux", "macOS")
+    /// Operation System (e.g., "Windows", "Linux", "macOS")
     #[serde(rename = "$os")]
     pub os: String,
 
-    // Browser (must be "Discord Selfbot" for selfbots)
+    /// Browser (must be "Discord Selfbot" for selfbots)
     #[serde(rename = "$browser")]
     pub browser: String,
 
-    // Device (empty for desktops)
+    /// Device (empty for desktops)
     #[serde(rename = "$device")]
     pub device: String,
 
-    // Sytem locale (e.g., "en-US")
+    /// Sytem locale (e.g., "en-US")
     #[serde(rename = "$system_locale")]
     pub system_locale: String,
 
-    // Navigator version (e.g., "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+    /// Navigator version (e.g., "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     #[serde(rename = "$browser_version")]
     pub browser_version: String,
 
-    // OS version (e.g., "10")
+    /// OS version (e.g., "10")
     #[serde(rename = "$os_version")]
     pub os_version: String,
 
-    // Referrer (empty for selfbots)
+    /// Referrer (empty for selfbots)
     #[serde(rename = "$referrer")]
     pub referrer: String,
 
-    // Referring domain (empty for selfbots)
+    /// Referring domain (empty for selfbots)
     #[serde(rename = "$referring_domain")]
     pub referring_domain: String,
 
-    // Release channel (e.g., "stable")
+    /// Release channel (e.g., "stable")
     #[serde(rename = "$release_channel")]
     pub release_channel: String,
 
-    // Client build number (e.g., 9999)
+    /// Client build number (e.g., 9999)
     #[serde(rename = "$client_build_number")]
     pub client_build_number: u32,
 }
@@ -77,28 +77,28 @@ impl ConnectionProperties {
             device: "".to_string(),
             system_locale: "en-US".to_string(),
             browser_version: "27.0.0".to_string(),
-            os_version: "14.0.0".to_string(),
+            os_version: "26".to_string(),
             referrer: "".to_string(),
             referring_domain: "".to_string(),
             release_channel: "stable".to_string(),
-            client_build_number: 275530,
+            client_build_number: 498109,
         }
     }
 }
 
-// Presence update
+/// Presence update
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PresenceUpdate {
-    // Status (e.g., "online", "idle", "dnd", "invisible")
+    /// Status (e.g., "online", "idle", "dnd", "invisible")
     pub status: String,
 
-    // Timestamps
+    /// Timestamps
     pub since: Option<u64>,
 
-    // Activities
+    /// Activities
     pub activities: Vec<Activity>,
 
-    // AFK status
+    /// AFK status
     pub afk: bool,
 }
 
@@ -140,8 +140,7 @@ impl Identify {
         // DIRECT_MESSAGE_REACTIONS (1 << 13) = 8192
         // MESSAGE_CONTENT (1 << 15) = 32768
         // Total: 1 + 2 + 512 + 1024 + 4096 + 8192 + 32768 = 46595
-        // Ou utiliser tous les intents: 3276799 (ou 53608447 avec intents privilégiés)
-        let intents = 3276799; // Tous les intents non-privilégiés
+        let intents = 3276799; // All intents (for maximum functionality, but can be customized if needed)
 
         Self {
             token: token.into(),

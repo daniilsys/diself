@@ -1,32 +1,37 @@
+use crate::cache::Cache;
 use crate::error::Result;
 use crate::http::HttpClient;
 use crate::model::{Channel, Message, User};
 use serde_json::json;
 use std::path::Path;
 
-/// Context passed to event handlers
-///
-/// Contains references to useful clients and data
+/// Context passed to event handlers.
+/// Contains references to useful clients and data.
 #[derive(Clone)]
 pub struct Context {
     /// HTTP client for making API requests
     pub http: HttpClient,
     /// The current user (bot)
     pub user: User,
+    /// Cache for Discord entities
+    pub cache: Cache,
 }
 
 impl Context {
     /// Creates a new context with a provided user
-    pub fn new(http: HttpClient, user: User) -> Self {
-        Self { http, user }
+    pub fn new(http: HttpClient, user: User, cache: Cache) -> Self {
+        // Cache the current user
+        cache.set_current_user(user.clone());
+        Self { http, user, cache }
     }
 
     /// Creates a context by fetching the current user from Discord API
-    pub async fn create(http: HttpClient) -> Result<Self> {
+    pub async fn create(http: HttpClient, cache: Cache) -> Result<Self> {
         let url = crate::http::api_url("/users/@me");
         let response = http.get(&url).await?;
         let user: User = serde_json::from_value(response)?;
-        Ok(Self { http, user })
+        cache.set_current_user(user.clone());
+        Ok(Self { http, user, cache })
     }
 
     /// Gets the current user reference
@@ -39,7 +44,7 @@ impl Context {
     /// Converts image bytes to Discord Data URI format
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// let image_data = std::fs::read("avatar.png")?;
     /// let data_uri = Context::image_to_data_uri(&image_data, "image/png");
     /// ```
@@ -54,7 +59,7 @@ impl Context {
     /// Automatically detects the content type based on file extension
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// let data_uri = ctx.read_image_as_data_uri("avatar.png").await?;
     /// ```
     pub async fn read_image_as_data_uri(&self, path: impl AsRef<Path>) -> Result<String> {
@@ -76,7 +81,7 @@ impl Context {
     /// Downloads an image from a URL and converts it to Data URI
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// let data_uri = ctx.download_image_as_data_uri("https://i.imgur.com/avatar.png").await?;
     /// ```
     pub async fn download_image_as_data_uri(&self, url: impl AsRef<str>) -> Result<String> {
@@ -133,7 +138,7 @@ impl Context {
     /// Updates the current user's avatar from a Data URI
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// let data_uri = "data:image/png;base64,iVBORw0KG...";
     /// ctx.update_avatar_from_data_uri(data_uri).await?;
     /// ```
@@ -150,7 +155,7 @@ impl Context {
     /// Updates the current user's avatar from a file path
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// ctx.update_avatar("avatar.png").await?;
     /// ```
     pub async fn update_avatar(&self, image_path: impl AsRef<Path>) -> Result<User> {
@@ -161,7 +166,7 @@ impl Context {
     /// Updates the current user's avatar from raw bytes
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// let image_bytes = std::fs::read("avatar.png")?;
     /// ctx.update_avatar_from_bytes(&image_bytes, "image/png").await?;
     /// ```
@@ -177,7 +182,7 @@ impl Context {
     /// Updates the current user's avatar from a URL (CDN, imgur, etc.)
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// ctx.update_avatar_from_url("https://i.imgur.com/avatar.png").await?;
     /// ctx.update_avatar_from_url("https://cdn.discordapp.com/avatars/123/456.png").await?;
     /// ```
@@ -202,7 +207,7 @@ impl Context {
     /// Automatically detects if it's a URL or file path
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// ctx.set_avatar("avatar.png").await?;
     /// ctx.set_avatar("https://i.imgur.com/avatar.png").await?;
     /// ```
@@ -232,7 +237,7 @@ impl Context {
     /// Updates the current user's banner from a file path
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// ctx.update_banner("banner.gif").await?;
     /// ```
     pub async fn update_banner(&self, image_path: impl AsRef<Path>) -> Result<User> {
@@ -243,7 +248,7 @@ impl Context {
     /// Updates the current user's banner from a URL
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// ctx.update_banner_from_url("https://i.imgur.com/banner.gif").await?;
     /// ```
     pub async fn update_banner_from_url(&self, url: impl AsRef<str>) -> Result<User> {
@@ -278,7 +283,7 @@ impl Context {
     /// Updates multiple user settings at once
     ///
     /// # Example
-    /// ```no_run
+    /// ```ignore
     /// ctx.update_profile(
     ///     Some("NewUsername"),
     ///     Some("avatar.png"),

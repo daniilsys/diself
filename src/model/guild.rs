@@ -1,4 +1,4 @@
-use super::{message::Sticker, reaction::Emoji, Role};
+use super::{Channel, Emoji, Nameplate, Permissions, Role, Sticker, User};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -44,13 +44,16 @@ pub struct Guild {
     pub id: String,
 
     /// Guild name
-    pub name: String,
+    pub name: Option<String>,
 
     /// Icon hash (if the guild has an icon)
     pub icon_hash: Option<String>,
 
     /// Splash hash
     pub splash: Option<String>,
+
+    /// Guild's member count
+    member_count: Option<u64>,
 
     /// Discord splash hash; only present for guilds with the "DISCOVERABLE" feature
     pub discovery_splash: Option<String>,
@@ -60,10 +63,10 @@ pub struct Guild {
     pub owner: bool,
 
     /// Id of the owner user
-    pub owner_id: String,
+    pub owner_id: Option<String>,
 
     /// Total permissions for the user in the guild (bitfield)
-    pub permissions: Option<String>,
+    pub permissions: Option<Permissions>,
 
     /// Voice region ID for the guild (deprecated)
     pub region: Option<String>,
@@ -92,6 +95,14 @@ pub struct Guild {
     /// Explicit content filter level
     /// 0: DISABLED, 1: MEMBERS_WITHOUT_ROLES, 2: ALL_MEMBERS
     pub explicit_content_filter: Option<u8>,
+
+    /// Members in the guild
+    #[serde(default)]
+    pub members: Vec<Member>,
+
+    /// Channels in the guild
+    #[serde(default)]
+    pub channels: Vec<Channel>,
 
     /// Roles in the guild
     #[serde(default)]
@@ -178,6 +189,62 @@ pub struct Guild {
 
     /// The id of the channel where admins and moderators of Community guilds receive safety alerts from Discord
     pub safety_alerts_channel_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Member {
+    /// The user this guild member represents
+    pub user: User,
+
+    /// The nickname of the member in the guild
+    pub nick: Option<String>,
+
+    /// The member's guild avatar hash (if any)
+    pub avatar: Option<String>,
+
+    /// The member's equipped collectibles
+    #[serde(default)]
+    pub collectibles: Vec<Nameplate>,
+
+    /// The member's guild banner hash
+    pub banner: Option<String>,
+
+    /// The member's guild bio
+    pub bio: Option<String>,
+
+    /// The member's roles in the guild
+    #[serde(default)]
+    pub roles: Vec<String>,
+
+    /// Whether the member is deafened in voice channels
+    #[serde(default)]
+    pub deaf: bool,
+
+    /// Whether the member is muted in voice channels
+    #[serde(default)]
+    pub mute: bool,
+
+    /// The timestamp when the member joined the guild, in ISO8601 format
+    pub joined_at: String,
+
+    /// The timestamp when the member started boosting the guild, in ISO8601 format (if any)
+    pub premium_since: Option<String>,
+
+    /// Whether the member is pending (i.e., has not yet passed the guild's Membership Screening requirements)
+    #[serde(default)]
+    pub pending: bool,
+
+    /// WHen the member's timeout expires, in ISO8601 format (if any)
+    pub communication_disabled_until: Option<String>,
+
+    /// When the member's unusual DM activity flag will expire (if any)
+    pub unusual_dm_activity_until: Option<String>,
+
+    /// The member's flags
+    pub flags: u64,
+
+    /// The member's permissions
+    pub permissions: Option<Permissions>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

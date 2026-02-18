@@ -12,7 +12,7 @@ pub const BASE_URL: &str = "https://discord.com/api";
 /// 
 /// # Example
 /// ```
-/// use discord_selfbot::http;
+/// use diself::http;
 /// 
 /// let url = http::api_url("/channels/123456789/messages");
 /// // Returns: "https://discord.com/api/v10/channels/123456789/messages"

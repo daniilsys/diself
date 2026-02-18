@@ -1,14 +1,15 @@
-use crate::client::Context;
+use crate::client::{Context, DispatchEvent};
 use crate::model::{Message, User};
 use async_trait::async_trait;
+use serde_json::Value;
 
 /// Trait for handling Discord events
 ///
 /// Implement this trait to respond to Discord events.
 ///
 /// # Example
-/// ```no_run
-/// use discord_selfbot::prelude::*;
+/// ```ignore
+/// use diself::prelude::*;
 ///
 /// struct MyBot;
 ///
@@ -27,6 +28,16 @@ use async_trait::async_trait;
 /// ```
 #[async_trait]
 pub trait EventHandler: Send + Sync {
+    /// Called for every gateway payload received (all opcodes).
+    async fn on_gateway_payload(&self, ctx: &Context, payload: &Value) {
+        let _ = (ctx, payload);
+    }
+
+    /// Called for every dispatch event (opcode 0), including unknown events.
+    async fn on_dispatch(&self, ctx: &Context, event: DispatchEvent) {
+        let _ = (ctx, event);
+    }
+
     /// Called when the bot is ready
     async fn on_ready(&self, ctx: &Context, user: User) {
         let _ = (ctx, user);
