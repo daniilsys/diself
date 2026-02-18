@@ -220,7 +220,9 @@ impl Gateway {
             .ok_or(Error::InvalidPayload)?;
 
         let heartbeat_interval = Duration::from_millis(self.heartbeat_interval_ms);
-        let mut heartbeat = time::interval_at(Instant::now() + heartbeat_interval, heartbeat_interval);
+        // `interval` ticks immediately once; start at +interval to avoid false ACK timeout loops.
+        let mut heartbeat =
+            time::interval_at(Instant::now() + heartbeat_interval, heartbeat_interval);
         heartbeat.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
 
         if resume {
