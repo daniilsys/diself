@@ -30,7 +30,7 @@ This project is intended for authorized and compliant use only.
 
 ```toml
 [dependencies]
-discord-selfbot = "0.1.0"
+diself = "0.1.0"
 tokio = { version = "1", features = ["full"] }
 ```
 
