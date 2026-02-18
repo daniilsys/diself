@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 use crate::gateway::{Connection, Identify};
 use rand::Rng;
 use serde_json::{json, Value};
-use tokio::time::{self, Duration, Interval};
+use tokio::time::{self, Duration, Interval, Instant};
 
 const DEFAULT_GATEWAY_URL: &str = "wss://gateway.discord.gg/?v=10&encoding=json";
 const INVALID_SESSION_RETRY_DELAY: Duration = Duration::from_secs(1);
@@ -219,7 +219,8 @@ impl Gateway {
             .as_u64()
             .ok_or(Error::InvalidPayload)?;
 
-        let mut heartbeat = time::interval(Duration::from_millis(self.heartbeat_interval_ms));
+        let heartbeat_interval = Duration::from_millis(self.heartbeat_interval_ms);
+        let mut heartbeat = time::interval_at(Instant::now() + heartbeat_interval, heartbeat_interval);
         heartbeat.set_missed_tick_behavior(time::MissedTickBehavior::Delay);
 
         if resume {
@@ -237,7 +238,7 @@ impl Gateway {
         self.connection = Some(connection);
         self.heartbeat = Some(heartbeat);
         self.awaiting_heartbeat_ack = false;
-        self.pending_heartbeat = true;
+        self.pending_heartbeat = false;
         Ok(())
     }
 
