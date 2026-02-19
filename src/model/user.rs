@@ -1,4 +1,6 @@
+use crate::model::{Emoji, Member};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
@@ -76,6 +78,54 @@ pub struct User {
     pub primary_guild: Option<PrimaryGuild>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserProfile {
+    /// The bot's application profile
+    pub application: Option<ApplicationProfile>,
+
+    /// The user's profile user data
+    pub user: Option<User>,
+
+    /// The user's profile metadata
+    #[serde(default)]
+    pub profile_metadata: Option<ProfileMetadata>,
+
+    /// The user's profile badges
+    #[serde(default)]
+    pub badges: Option<Vec<Badge>>,
+
+    /// The guild member in the guild specified
+    #[serde(default)]
+    pub guild_member: Option<Member>,
+
+    /// The guild member's profile in the guild specified
+    #[serde(default)]
+    pub guild_member_profile: Option<ProfileMetadata>,
+
+    /// The user's pre-migration username#discriminator, if applicable and shown
+    pub legacy_username: Option<String>,
+
+    /// The mutual guilds of the user with the current user
+    #[serde(default)]
+    pub mutual_guilds: Option<Vec<MutualGuild>>,
+
+    /// The mutual friends the user has with the current user
+    #[serde(default)]
+    pub mutual_friends: Option<Vec<User>>,
+
+    /// The number of mutual friends the user has with the current user
+    pub mutual_friend_count: Option<u64>,
+
+    /// The type of premium (Nitro) subscription on a user's account
+    pub premium_type: Option<u8>,
+
+    /// The date the user's premium subscription started
+    pub premium_since: Option<String>,
+
+    /// The date the user's premium guild (boosting) subscription started
+    pub premium_guild_since: Option<String>,
+}
+
 impl User {
     /// Returns the user's tag (username#discriminator)
     pub fn tag(&self) -> String {
@@ -121,30 +171,142 @@ impl User {
             _ => "None",
         }
     }
+
+    /// Sends a friend request to this user.
+    pub async fn add_friend(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/relationships/{}", self.id));
+        http.put(&url, json!({ "type": 1 })).await?;
+        Ok(())
+    }
+
+    /// Blocks this user.
+    pub async fn block(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/relationships/{}", self.id));
+        http.put(&url, json!({ "type": 2 })).await?;
+        Ok(())
+    }
+
+    /// Removes any relationship with this user (friend, blocked, pending...).
+    pub async fn remove_relationship(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/relationships/{}", self.id));
+        http.delete(&url).await?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Badge {
+    /// The reference ID of the badge
+    pub id: String,
+
+    /// A description of the badge
+    pub description: String,
+
+    /// The badge's icon hash
+    pub icon: Option<String>,
+
+    /// A link representing the badge
+    pub link: Option<String>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfileMetadata {
+    /// The guild ID this profile applies to, if it is a guild profile
+    pub guild_id: Option<String>,
+
+    /// The user's pronouns (max 40 characters)
+    pub pronouns: Option<String>,
+
+    /// The user's bio
+    pub bio: Option<String>,
+
+    /// The user's banner hash
+    pub banner: Option<String>,
+
+    /// The user's banner accent color
+    pub accent_color: Option<u32>,
+
+    /// The user's profile theme (currently unused)
+    pub theme_colors: Option<Vec<u32>>,
+
+    /// The user's profile popout animation particle type
+    pub popout_animation_particle_type: Option<u8>,
+
+    /// The user's profile emoji
+    #[serde(default)]
+    pub emoji: Option<Emoji>,
+
+    ///  The user's profile effect
+    #[serde(default)]
+    pub profile_effect: Option<ProfileEffect>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MutualGuild {
+    /// The guild ID
+    pub id: String,
+    /// The user's nickname in the guild
+    pub nickname: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfileEffect {
+    /// The profile effect's ID
+    pub id: String,
+
+    /// Unix timestamp of when the current profile effect expires
+    pub expires_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApplicationProfile {
+    /// The application's ID
+    pub id: String,
+
+    /// The application's flags
+    pub flags: Option<u64>,
+
+    /// Whether the application is verified
+    #[serde(default)]
+    pub verified: bool,
+
+    /// Whether the application has monetization enabled
+    #[serde(default)]
+    pub storefront_available: bool,
+
+    /// The ID of the application's primary SKU (if any)
+    pub primary_sku_id: Option<String>,
+
+    /// The default in-app authorization link for the intergation
+    pub install_params: Option<String>,
+
+    /// The ID of the application's most popular application commands (max 5)
+    pub popular_application_command_ids: Option<Vec<String>>,
+
+    /// The application's default custom authorization link (if any)
+    pub custom_install_url: Option<String>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AvatarDecoration {
     /// The avatar decoration hash
-    pub asset: String,
+    pub asset: Option<String>,
 
     /// ID of the avatar decoration's SKU (if any)
-    pub sku_id: String,
+    pub sku_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Nameplate {
     /// ID of the nameplate SKU
-    pub sku_id: String,
+    pub sku_id: Option<String>,
 
     /// Path to the nameplate asset
-    pub asset: String,
+    pub asset: Option<String>,
 
     /// The label of this nameplate (Currently unused)
-    pub label: String,
+    pub label: Option<String>,
 
     /// Background color of the nameplate (crimson, berry, sky, teal, forest, bubble_gum, violet, cobalt, clover, lemon, white)
-    pub palette: String,
+    pub palette: Option<String>,
 
     /// Unix timestamp of when the current nameplate expires (if any)
     pub expires_at: Option<String>,
@@ -163,4 +325,16 @@ pub struct PrimaryGuild {
 
     /// The sevrer tag badge hash
     pub badge: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Avatar {
+    /// The avatar ID
+    pub id: Option<String>,
+
+    /// The avatar hash
+    pub storage_hash: Option<String>,
+
+    /// The avatar's description (if any)
+    pub description: Option<String>,
 }

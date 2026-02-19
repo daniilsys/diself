@@ -248,6 +248,35 @@ pub struct Member {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupplementalMember {
+    /// The ID of the user this guild member represents
+    pub user_id: String,
+    /// The associated guild member
+    pub member: Member,
+    /// How the user joined the guild SEE: <https://docs.discord.food/resources/guild#join-source-type>
+    pub join_source_type: Option<u8>,
+    /// The invite code or vanity used to join the guild, if applicable
+    pub source_invite_code: Option<String>,
+    /// The ID of the user who invited the user to the guild, if applicable
+    pub inviter_id: Option<String>,
+    /// The type of integration that added the user to the guild, if applicable
+    pub integration_type: Option<u8>,
+    /// The ID of the application that owns the linked lobby
+    pub join_source_application_id: Option<String>,
+    /// The ID of the channel the lobby is linked to
+    pub join_source_channel_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Ban {
+    /// The user that was banned
+    pub user: User,
+
+    /// The reason for the ban (if any)
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WelcomeScreen {
     /// The server description shown in the welcome screen
     pub description: Option<String>,
@@ -269,4 +298,21 @@ pub struct WelcomeScreenChannel {
 
     /// The unicode emoji displayed for the channel in the welcome screen (if no custom emoji is set)
     pub emoji_name: Option<String>,
+}
+
+impl Guild {
+    /// Fetches a guild by id.
+    pub async fn fetch(http: &crate::HttpClient, guild_id: impl AsRef<str>) -> crate::Result<Self> {
+        let url = crate::http::api_url(&format!("/guilds/{}", guild_id.as_ref()));
+        let response = http.get(&url).await?;
+        let guild = serde_json::from_value(response)?;
+        Ok(guild)
+    }
+
+    /// Leaves this guild.
+    pub async fn leave(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/guilds/{}", self.id));
+        http.delete(&url).await?;
+        Ok(())
+    }
 }

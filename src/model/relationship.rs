@@ -1,6 +1,7 @@
 use super::user::User;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde_json::json;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
@@ -51,4 +52,37 @@ pub struct Relationship {
     /// Whether the target user has authorized the same application the current user's session is associated with
     #[serde(default)]
     pub has_played_game: bool,
+}
+
+impl Relationship {
+    /// Returns true if this relationship is an accepted friend.
+    pub fn is_friend(&self) -> bool {
+        self.kind == RelationshipType::Friend
+    }
+
+    /// Returns true if the user is blocked.
+    pub fn is_blocked(&self) -> bool {
+        self.kind == RelationshipType::Blocked
+    }
+
+    /// Accepts/sends a friend relationship for this user id.
+    pub async fn add_friend(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/relationships/{}", self.id));
+        http.put(&url, json!({ "type": 1 })).await?;
+        Ok(())
+    }
+
+    /// Blocks this user id.
+    pub async fn block(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/relationships/{}", self.id));
+        http.put(&url, json!({ "type": 2 })).await?;
+        Ok(())
+    }
+
+    /// Removes this relationship.
+    pub async fn remove(&self, http: &crate::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!("/users/@me/relationships/{}", self.id));
+        http.delete(&url).await?;
+        Ok(())
+    }
 }

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::{PermissionOverwrite, Permissions};
+use super::{Member, PermissionOverwrite, Permissions};
 use crate::{HttpClient, Message, User};
 
 /// Represents a Discord channel (text, voice, DM, etc.)
@@ -129,6 +129,29 @@ pub struct Channel {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThreadMember {
+    /// The ID of the thread
+    #[serde(rename = "id")]
+    pub thread_id: String,
+
+    /// The ID of the user
+    pub user_id: String,
+
+    /// The timestamp when the user joined the thread
+    pub join_timestamp: String,
+
+    /// The flags for the user in the thread
+    pub flags: u64,
+
+    /// Whether the user has muted the thread
+    #[serde(default)]
+    pub muted: bool,
+
+    /// The member object for the user
+    #[serde(default)]
+    pub member: Option<Member>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChannelMention {
     /// Unique ID of the channel
     pub id: String,
@@ -147,12 +170,13 @@ pub struct ChannelMention {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForumTag {
     /// The id of the tag
-    pub id: String,
+    pub id: Option<String>,
 
     /// The name of the tag
     pub name: String,
 
     /// Moderated (whether users can add this tag to their threads)
+    #[serde(default)]
     pub moderated: bool,
 
     /// Custom emoji ID associated with the tag (if any)
@@ -160,25 +184,6 @@ pub struct ForumTag {
 
     /// Emoji name associated with the tag (if any, used if emoji_id is null)
     pub emoji_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ThreadMember {
-    /// The ID of the thread
-    #[serde(rename = "id")]
-    pub thread_id: String,
-
-    /// The ID of the user
-    pub user_id: String,
-
-    /// The timestamp when the user joined the thread
-    pub join_timestamp: String,
-
-    /// The flags for the user in the thread
-    pub flags: u64,
-    // TODO: GUILD + MEMBER
-    // Guild member object (if the thread is in a guild and the user is a member of that guild)
-    // pub member: Option<GuildMember>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -250,7 +255,11 @@ impl Channel {
         http: &HttpClient,
         content: impl Into<String>,
     ) -> Result<Message, crate::error::Error> {
-        let url = crate::http::api_url(&format!("/channels/{}/messages", self.id));
+        let url = if self.is_dm() {
+            crate::http::api_url(&format!("/users/{}/messages", self.id))
+        } else {
+            crate::http::api_url(&format!("/channels/{}/messages", self.id))
+        };
         let body = serde_json::json!({
             "content": content.into()
         });
@@ -259,19 +268,66 @@ impl Channel {
         let message: Message = serde_json::from_value(response)?;
         Ok(message)
     }
-    /// Edit the channel's name (if applicable)
-    pub async fn edit_name(
+
+    /// Fetches messages from this channel. (`GET /channels/{channel_id}/messages`) SEE: <https://docs.discord.food/resources/message#get-messages>
+    /// # Params
+    /// - around?: Snowflake - Get messages around this message ID
+    /// - before?: Snowflake - Get messages before this message ID
+    /// - after?: Snowflake - Get messages after this message ID
+    /// - limit?: number - Max number of messages to return (1-100, default 50)
+    pub async fn messages(
         &self,
         http: &HttpClient,
-        new_name: impl Into<String>,
-    ) -> Result<Channel, crate::error::Error> {
-        let url = crate::http::api_url(&format!("/channels/{}", self.id));
-        let body = serde_json::json!({
-            "name": new_name.into()
-        });
+        around: Option<String>,
+        before: Option<String>,
+        after: Option<String>,
+        limit: Option<u8>,
+    ) -> Result<Vec<Message>, crate::error::Error> {
+        let mut url = crate::http::api_url(&format!("/channels/{}/messages", self.id));
+        let mut query_params = vec![];
 
-        let response = http.patch(&url, body).await?;
-        let updated_channel: Channel = serde_json::from_value(response)?;
-        Ok(updated_channel)
+        if let Some(around) = around {
+            query_params.push(("around", around));
+        }
+        if let Some(before) = before {
+            query_params.push(("before", before));
+        }
+        if let Some(after) = after {
+            query_params.push(("after", after));
+        }
+        if let Some(limit) = limit {
+            query_params.push(("limit", limit.to_string()));
+        }
+
+        if !query_params.is_empty() {
+            url.push('?');
+            url.push_str(
+                &query_params
+                    .iter()
+                    .map(|(k, v)| format!("{}={}", k, v))
+                    .collect::<Vec<_>>()
+                    .join("&"),
+            );
+        }
+
+        let response = http.get(&url).await?;
+        let messages: Vec<Message> = serde_json::from_value(response)?;
+        Ok(messages)
+    }
+
+    /// Fetches a single message by ID from this channel. (`GET /channels/{channel_id}/messages/{message_id}`) SEE: <https://docs.discord.food/resources/message#get-message>
+    pub async fn get_message(
+        &self,
+        http: &HttpClient,
+        message_id: impl AsRef<str>,
+    ) -> Result<Message, crate::error::Error> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}",
+            self.id,
+            message_id.as_ref()
+        ));
+        let response = http.get(&url).await?;
+        let message: Message = serde_json::from_value(response)?;
+        Ok(message)
     }
 }

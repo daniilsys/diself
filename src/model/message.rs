@@ -280,6 +280,14 @@ pub struct Sticker {
     pub sort_value: Option<u64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupplementalMessageRequest {
+    /// The ID of the message request
+    pub channel_id: String,
+    /// The trigger message
+    pub message_preview: Message,
+}
+
 impl Message {
     /// Checks if the message starts with a prefix
     pub fn starts_with(&self, prefix: &str) -> bool {
@@ -356,11 +364,20 @@ impl Message {
         http: &crate::http::HttpClient,
         new_content: impl Into<String>,
     ) -> crate::Result<Message> {
-        let url = crate::http::api_url(&format!(
-            "/channels/{}/messages/{}",
-            self.channel_id, self.id
-        ));
-        let body = serde_json::json!({
+        let channel = self
+            .channel(http)
+            .await
+            .ok_or_else(|| crate::error::Error::InvalidPayload)?;
+
+        let url = if channel.is_dm() {
+            crate::http::api_url(&format!("/users/{}/messages/{}", self.channel_id, self.id))
+        } else {
+            crate::http::api_url(&format!(
+                "/channels/{}/messages/{}",
+                self.channel_id, self.id
+            ))
+        };
+        let body = json!({
             "content": new_content.into()
         });
         let response = http.patch(&url, body).await?;
@@ -398,7 +415,7 @@ impl Message {
             "/channels/{}/messages/{}/reactions/{}/@me",
             self.channel_id,
             self.id,
-            emoji.as_ref()
+            urlencoding::encode(emoji.as_ref())
         ));
         http.put(&url, json!({})).await?;
         Ok(())
@@ -414,7 +431,34 @@ impl Message {
             "/channels/{}/messages/{}/reactions/{}/@me",
             self.channel_id,
             self.id,
-            emoji.as_ref()
+            urlencoding::encode(emoji.as_ref())
+        ));
+        http.delete(&url).await?;
+        Ok(())
+    }
+
+    /// Gets the reactions for the message
+    pub async fn reactions(
+        &self,
+        http: &crate::http::HttpClient,
+        emoji: impl AsRef<str>,
+    ) -> crate::Result<Vec<Reaction>> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}/reactions/{}",
+            self.channel_id,
+            self.id,
+            urlencoding::encode(emoji.as_ref())
+        ));
+        let response = http.get(&url).await?;
+        let reactions: Vec<Reaction> = serde_json::from_value(response)?;
+        Ok(reactions)
+    }
+
+    /// Deletes all reactions on a message.
+    pub async fn clear_reactions(&self, http: &crate::http::HttpClient) -> crate::Result<()> {
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}/reactions",
+            self.channel_id, self.id
         ));
         http.delete(&url).await?;
         Ok(())

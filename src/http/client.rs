@@ -142,7 +142,7 @@ impl HttpClient {
                     .await;
                 } else {
                     // No handler available
-                    return Err(Error::CaptchaRequired(captcha_info));
+                    Err(Error::CaptchaRequired(captcha_info))
                 }
             }
             result => result,
@@ -214,16 +214,14 @@ impl HttpClient {
             if json.get("captcha_sitekey").is_some() {
                 // It's a captcha error, try to deserialize
                 match serde_json::from_value::<CaptchaInfo>(json.clone()) {
-                    Ok(captcha_info) => {
-                        return Err(Error::CaptchaRequired(captcha_info));
-                    }
+                    Ok(captcha_info) => Err(Error::CaptchaRequired(captcha_info)),
                     Err(_) => {
                         // Failed to parse captcha info, treat as regular error
-                        return Err(Error::GatewayConnection(format!(
+                        Err(Error::GatewayConnection(format!(
                             "HTTP {} - {}",
                             status,
-                            json.to_string()
-                        )));
+                            json
+                        )))
                     }
                 }
             } else {
@@ -231,7 +229,7 @@ impl HttpClient {
                 Err(Error::GatewayConnection(format!(
                     "HTTP {} - {}",
                     status,
-                    json.to_string()
+                    json
                 )))
             }
         } else {

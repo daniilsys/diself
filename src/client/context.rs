@@ -1,4 +1,5 @@
 use crate::cache::Cache;
+use crate::client::{ChannelsManager, GuildsManager, RelationshipsManager, UsersManager};
 use crate::error::Result;
 use crate::http::HttpClient;
 use crate::model::{Channel, Message, User};
@@ -15,6 +16,14 @@ pub struct Context {
     pub user: User,
     /// Cache for Discord entities
     pub cache: Cache,
+    /// Users API manager
+    pub users: UsersManager,
+    /// Guilds API manager
+    pub guilds: GuildsManager,
+    /// Relationships API manager
+    pub relationships: RelationshipsManager,
+    /// Channels API Manager
+    pub channels: ChannelsManager,
 }
 
 impl Context {
@@ -22,7 +31,15 @@ impl Context {
     pub fn new(http: HttpClient, user: User, cache: Cache) -> Self {
         // Cache the current user
         cache.set_current_user(user.clone());
-        Self { http, user, cache }
+        Self {
+            http,
+            user,
+            cache,
+            users: UsersManager,
+            guilds: GuildsManager,
+            relationships: RelationshipsManager,
+            channels: ChannelsManager,
+        }
     }
 
     /// Creates a context by fetching the current user from Discord API
@@ -31,7 +48,15 @@ impl Context {
         let response = http.get(&url).await?;
         let user: User = serde_json::from_value(response)?;
         cache.set_current_user(user.clone());
-        Ok(Self { http, user, cache })
+        Ok(Self {
+            http,
+            user,
+            cache,
+            users: UsersManager,
+            guilds: GuildsManager,
+            relationships: RelationshipsManager,
+            channels: ChannelsManager,
+        })
     }
 
     /// Gets the current user reference
