@@ -21,7 +21,7 @@ impl EventHandler for CacheBot {
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(tracing::Level::DEBUG)
         .init();
 
     let token = env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN not set");

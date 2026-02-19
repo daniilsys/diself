@@ -49,6 +49,7 @@ async-trait = "0.1"
 # Concurrency
 dashmap = "5.5"  # Pour le cache thread-safe
 parking_lot = "0.12"  # Mutex/RwLock plus rapides
+urlencoding = "2.1.3"
 
 [dev-dependencies]
 tokio-test = "0.4"

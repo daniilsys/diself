@@ -43,8 +43,13 @@ pub trait EventHandler: Send + Sync {
         let _ = (ctx, user);
     }
 
+    /// Called soon after the READY event, and giving extra information about the session
+    async fn on_ready_supplemental(&self, ctx: &Context, user: User, data: Value) {
+        let _ = (ctx, user, data);
+    }
+
     /// Called for every new message
-    async fn on_message(&self, ctx: &Context, message: Message) {
+    async fn on_message_create(&self, ctx: &Context, message: Message) {
         let _ = (ctx, message);
     }
 

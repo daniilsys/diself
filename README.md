@@ -30,7 +30,7 @@ This project is intended for authorized and compliant use only.
 
 ```toml
 [dependencies]
-diself = "0.1.0"
+diself = "0.1.1"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -47,7 +47,7 @@ impl EventHandler for MyHandler {
         println!("Logged in as {}", user.tag());
     }
 
-    async fn on_message(&self, ctx: &Context, msg: Message) {
+    async fn on_message_create(&self, ctx: &Context, msg: Message) {
         if msg.content == ".ping" {
             let _ = msg.reply(&ctx.http, "pong").await;
         }
@@ -114,6 +114,30 @@ The current gateway implementation includes:
 - `RECONNECT` and `INVALID_SESSION` handling
 - Backoff with jitter for reconnect attempts
 
+## Managers API
+
+`Context` exposes endpoint managers for ergonomic calls:
+
+- `ctx.users`
+- `ctx.guilds`
+- `ctx.channels`
+- `ctx.relationships`
+
+Example:
+
+```rust
+use diself::prelude::*;
+
+async fn example(ctx: &Context) -> Result<()> {
+    let me = ctx.users.me(&ctx.http).await?;
+    println!("connected as {}", me.tag());
+
+    // Example relationship action
+    ctx.relationships.send_friend_request(&ctx.http, "username").await?;
+    Ok(())
+}
+```
+
 ## Examples
 
 - `examples/hello_gateway.rs`
@@ -133,6 +157,25 @@ Recommended local checks:
 cargo check
 cargo clippy --all-targets --all-features
 cargo test
+```
+
+## Testing
+
+The project includes:
+
+- Unit/integration tests under `tests/`
+- Live endpoint smoke tests under `tests/endpoints_live.rs` (ignored by default)
+
+Run regular tests:
+
+```bash
+cargo test
+```
+
+Run live endpoint smoke tests:
+
+```bash
+DISCORD_TOKEN="..." cargo test --test endpoints_live -- --ignored --nocapture
 ```
 
 ## Roadmap

@@ -5,8 +5,8 @@ use crate::gateway::Gateway;
 use crate::http::HttpClient;
 use crate::model::{Message, User};
 use serde_json::Value;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tokio::sync::Notify;
 
 /// Main client struct for the selfbot.   
@@ -209,10 +209,17 @@ impl Client {
 
                 match dispatch_kind {
                     DispatchEventType::Ready => {
-                        if let Ok(user) = serde_json::from_value::<User>(dispatch.data["user"].clone()) {
+                        if let Ok(user) =
+                            serde_json::from_value::<User>(dispatch.data["user"].clone())
+                        {
                             ctx.cache.initialize(dispatch.data);
                             self.handler.on_ready(ctx, user).await;
                         }
+                    }
+                    DispatchEventType::ReadySupplemental => {
+                        self.handler
+                            .on_ready_supplemental(ctx, ctx.user.clone(), dispatch.data.clone())
+                            .await;
                     }
                     DispatchEventType::MessageCreate => {
                         if let Ok(message) = serde_json::from_value::<Message>(dispatch.data) {
@@ -220,7 +227,7 @@ impl Client {
                             for user in &message.mentions {
                                 ctx.cache.cache_user(user.clone());
                             }
-                            self.handler.on_message(ctx, message).await;
+                            self.handler.on_message_create(ctx, message).await;
                         }
                     }
                     DispatchEventType::MessageUpdate => {
