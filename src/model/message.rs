@@ -364,19 +364,10 @@ impl Message {
         http: &crate::http::HttpClient,
         new_content: impl Into<String>,
     ) -> crate::Result<Message> {
-        let channel = self
-            .channel(http)
-            .await
-            .ok_or_else(|| crate::error::Error::InvalidPayload)?;
-
-        let url = if channel.is_dm() {
-            crate::http::api_url(&format!("/users/{}/messages/{}", self.channel_id, self.id))
-        } else {
-            crate::http::api_url(&format!(
-                "/channels/{}/messages/{}",
-                self.channel_id, self.id
-            ))
-        };
+        let url = crate::http::api_url(&format!(
+            "/channels/{}/messages/{}",
+            self.channel_id, self.id
+        ));
         let body = json!({
             "content": new_content.into()
         });

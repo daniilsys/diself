@@ -255,11 +255,9 @@ impl Channel {
         http: &HttpClient,
         content: impl Into<String>,
     ) -> Result<Message, crate::error::Error> {
-        let url = if self.is_dm() {
-            crate::http::api_url(&format!("/users/{}/messages", self.id))
-        } else {
-            crate::http::api_url(&format!("/channels/{}/messages", self.id))
-        };
+        // Sending a message always goes through the channel message endpoint,
+        // including DM channels.
+        let url = crate::http::api_url(&format!("/channels/{}/messages", self.id));
         let body = serde_json::json!({
             "content": content.into()
         });

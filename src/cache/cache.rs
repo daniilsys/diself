@@ -120,6 +120,11 @@ impl Cache {
         self.relationship_cache.count()
     }
 
+    /// Gets friends from cache
+    pub fn friends(&self) -> Vec<Relationship> {
+        self.relationship_cache.friends()
+    }
+
     // ==================== Channels ====================
 
     /// Gets a channel from cache by ID

@@ -1,4 +1,4 @@
-use crate::model::Relationship;
+use crate::model::{Relationship, RelationshipType};
 use dashmap::DashMap;
 use std::sync::Arc;
 
@@ -66,5 +66,13 @@ impl RelationshipCache {
                 data
             );
         }
+    }
+
+    pub fn friends(&self) -> Vec<Relationship> {
+        self.relationships
+            .iter()
+            .filter(|entry| entry.value().kind == RelationshipType::Friend)
+            .map(|entry| entry.value().clone())
+            .collect()
     }
 }
