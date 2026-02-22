@@ -1,5 +1,8 @@
 use crate::cache::Cache;
-use crate::client::{ChannelsManager, GuildsManager, RelationshipsManager, UsersManager};
+use crate::client::{
+    ChannelsManager, CollectorHub, CollectorOptions, GuildsManager, MessageCollector,
+    ReactionCollectEvent, ReactionCollector, RelationshipsManager, UsersManager,
+};
 use crate::error::Result;
 use crate::http::HttpClient;
 use crate::model::{Channel, Message, User};
@@ -24,6 +27,8 @@ pub struct Context {
     pub relationships: RelationshipsManager,
     /// Channels API Manager
     pub channels: ChannelsManager,
+    /// Collector hub for message/reaction collectors
+    pub collectors: CollectorHub,
 }
 
 impl Context {
@@ -39,6 +44,7 @@ impl Context {
             guilds: GuildsManager,
             relationships: RelationshipsManager,
             channels: ChannelsManager,
+            collectors: CollectorHub::new(),
         }
     }
 
@@ -56,7 +62,62 @@ impl Context {
             guilds: GuildsManager,
             relationships: RelationshipsManager,
             channels: ChannelsManager,
+            collectors: CollectorHub::new(),
         })
+    }
+
+    /// Creates a message collector for MESSAGE_CREATE events.
+    ///
+    /// # Example
+    /// ```ignore
+    /// use diself::{CollectorOptions, Context};
+    /// use std::time::Duration;
+    ///
+    /// async fn example(ctx: &Context) {
+    ///     let mut collector = ctx.message_collector(
+    ///         CollectorOptions {
+    ///             time: Some(Duration::from_secs(20)),
+    ///             max: Some(5),
+    ///         },
+    ///         |m| m.content.contains("hello"),
+    ///     );
+    ///
+    ///     if let Some(msg) = collector.next().await {
+    ///         println!("First match: {}", msg.content);
+    ///     }
+    /// }
+    /// ```
+    pub fn message_collector<F>(&self, options: CollectorOptions, filter: F) -> MessageCollector
+    where
+        F: Fn(&Message) -> bool + Send + Sync + 'static,
+    {
+        self.collectors.message_collector(options, filter)
+    }
+
+    /// Creates a reaction collector for reaction add/remove events.
+    ///
+    /// # Example
+    /// ```ignore
+    /// use diself::{CollectorOptions, Context, ReactionEventType};
+    /// use std::time::Duration;
+    ///
+    /// async fn example(ctx: &Context, target_message_id: &str) {
+    ///     let mut collector = ctx.reaction_collector(
+    ///         CollectorOptions {
+    ///             time: Some(Duration::from_secs(30)),
+    ///             max: Some(1),
+    ///         },
+    ///         move |r| r.message_id == target_message_id && r.kind == ReactionEventType::Add,
+    ///     );
+    ///
+    ///     let _ = collector.next().await;
+    /// }
+    /// ```
+    pub fn reaction_collector<F>(&self, options: CollectorOptions, filter: F) -> ReactionCollector
+    where
+        F: Fn(&ReactionCollectEvent) -> bool + Send + Sync + 'static,
+    {
+        self.collectors.reaction_collector(options, filter)
     }
 
     /// Gets the current user reference

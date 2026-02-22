@@ -7,8 +7,10 @@ pub mod model;
 
 pub use cache::{Cache, CacheConfig};
 pub use client::{
-    ChannelsManager, Client, ClientBuilder, Context, DispatchEvent, DispatchEventType,
-    EventHandler, GuildsManager, RelationshipsManager, SearchThreadsParams, UsersManager,
+    ChannelsManager, Client, ClientBuilder, CollectorHub, CollectorOptions, Context,
+    DispatchEvent, DispatchEventType, EventHandler, GuildsManager, MessageCollector,
+    ReactionCollectEvent, ReactionCollector, ReactionEventType, RelationshipsManager,
+    SearchThreadsParams, UsersManager,
 };
 pub use error::{CaptchaInfo, Error, Result};
 pub use http::HttpClient;
@@ -23,8 +25,10 @@ pub use model::{Channel, Message, User};
 pub mod prelude {
     pub use crate::cache::{Cache, CacheConfig};
     pub use crate::client::{
-        ChannelsManager, Client, ClientBuilder, Context, DispatchEvent, DispatchEventType,
-        EventHandler, GuildsManager, RelationshipsManager, SearchThreadsParams, UsersManager,
+        ChannelsManager, Client, ClientBuilder, CollectorHub, CollectorOptions, Context,
+        DispatchEvent, DispatchEventType, EventHandler, GuildsManager, MessageCollector,
+        ReactionCollectEvent, ReactionCollector, ReactionEventType, RelationshipsManager,
+        SearchThreadsParams, UsersManager,
     };
     pub use crate::error::{CaptchaInfo, Error, Result};
     pub use crate::http::HttpClient;

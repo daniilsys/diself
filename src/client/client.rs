@@ -205,6 +205,7 @@ impl Client {
                 let dispatch = DispatchEvent::from_gateway_payload(event_type, sequence, data);
 
                 let dispatch_kind = dispatch.kind.clone();
+                ctx.collectors.dispatch(dispatch.clone());
                 self.handler.on_dispatch(ctx, dispatch.clone()).await;
 
                 match dispatch_kind {

@@ -62,4 +62,9 @@ pub trait EventHandler: Send + Sync {
     async fn on_message_delete(&self, ctx: &Context, channel_id: String, message_id: String) {
         let _ = (ctx, channel_id, message_id);
     }
+
+    /// Called when a user is updated
+    async fn on_user_update(&self, ctx: &Context, old_user: User, new_user: User) {
+        let _ = (ctx, old_user, new_user);
+    }
 }
