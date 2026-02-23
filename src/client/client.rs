@@ -207,6 +207,7 @@ impl Client {
                 let dispatch_kind = dispatch.kind.clone();
                 ctx.collectors.dispatch(dispatch.clone());
                 self.handler.on_dispatch(ctx, dispatch.clone()).await;
+                self.dispatch_raw_event(ctx, &dispatch).await;
 
                 match dispatch_kind {
                     DispatchEventType::Ready => {
@@ -260,5 +261,256 @@ impl Client {
         }
 
         Ok(())
+    }
+
+    async fn dispatch_raw_event(&self, ctx: &Context, dispatch: &DispatchEvent) {
+        match dispatch.kind {
+            DispatchEventType::Ready => self.handler.on_ready_event(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ReadySupplemental => self
+                .handler
+                .on_ready_supplemental_event(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::Resumed => self.handler.on_resumed_event(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ApplicationCommandPermissionsUpdate => self
+                .handler
+                .on_application_command_permissions_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::AutoModerationRuleCreate => self
+                .handler
+                .on_auto_moderation_rule_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::AutoModerationRuleUpdate => self
+                .handler
+                .on_auto_moderation_rule_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::AutoModerationRuleDelete => self
+                .handler
+                .on_auto_moderation_rule_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::AutoModerationActionExecution => self
+                .handler
+                .on_auto_moderation_action_execution(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::ChannelCreate => self.handler.on_channel_create(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ChannelUpdate => self.handler.on_channel_update(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ChannelDelete => self.handler.on_channel_delete(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ChannelPinsUpdate => self
+                .handler
+                .on_channel_pins_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::ThreadCreate => self.handler.on_thread_create(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ThreadUpdate => self.handler.on_thread_update(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ThreadDelete => self.handler.on_thread_delete(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ThreadListSync => self.handler.on_thread_list_sync(ctx, dispatch.data.clone()).await,
+            DispatchEventType::ThreadMemberUpdate => self
+                .handler
+                .on_thread_member_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::ThreadMembersUpdate => self
+                .handler
+                .on_thread_members_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::EntitlementCreate => self
+                .handler
+                .on_entitlement_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::EntitlementUpdate => self
+                .handler
+                .on_entitlement_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::EntitlementDelete => self
+                .handler
+                .on_entitlement_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildCreate => self.handler.on_guild_create(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildUpdate => self.handler.on_guild_update(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildDelete => self.handler.on_guild_delete(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildAuditLogEntryCreate => self
+                .handler
+                .on_guild_audit_log_entry_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildBanAdd => self.handler.on_guild_ban_add(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildBanRemove => self
+                .handler
+                .on_guild_ban_remove(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildEmojisUpdate => self
+                .handler
+                .on_guild_emojis_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildStickersUpdate => self
+                .handler
+                .on_guild_stickers_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildIntegrationsUpdate => self
+                .handler
+                .on_guild_integrations_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildMemberAdd => self.handler.on_guild_member_add(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildMemberRemove => self
+                .handler
+                .on_guild_member_remove(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildMemberUpdate => self
+                .handler
+                .on_guild_member_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildMembersChunk => self
+                .handler
+                .on_guild_members_chunk(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildRoleCreate => self.handler.on_guild_role_create(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildRoleUpdate => self.handler.on_guild_role_update(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildRoleDelete => self.handler.on_guild_role_delete(ctx, dispatch.data.clone()).await,
+            DispatchEventType::GuildScheduledEventCreate => self
+                .handler
+                .on_guild_scheduled_event_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildScheduledEventUpdate => self
+                .handler
+                .on_guild_scheduled_event_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildScheduledEventDelete => self
+                .handler
+                .on_guild_scheduled_event_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildScheduledEventUserAdd => self
+                .handler
+                .on_guild_scheduled_event_user_add(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildScheduledEventUserRemove => self
+                .handler
+                .on_guild_scheduled_event_user_remove(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildSoundboardSoundCreate => self
+                .handler
+                .on_guild_soundboard_sound_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildSoundboardSoundUpdate => self
+                .handler
+                .on_guild_soundboard_sound_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildSoundboardSoundDelete => self
+                .handler
+                .on_guild_soundboard_sound_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::GuildSoundboardSoundsUpdate => self
+                .handler
+                .on_guild_soundboard_sounds_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::IntegrationCreate => self
+                .handler
+                .on_integration_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::IntegrationUpdate => self
+                .handler
+                .on_integration_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::IntegrationDelete => self
+                .handler
+                .on_integration_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::InteractionCreate => self
+                .handler
+                .on_interaction_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::InviteCreate => self.handler.on_invite_create(ctx, dispatch.data.clone()).await,
+            DispatchEventType::InviteDelete => self.handler.on_invite_delete(ctx, dispatch.data.clone()).await,
+            DispatchEventType::MessageCreate => self
+                .handler
+                .on_message_create_event(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageUpdate => self
+                .handler
+                .on_message_update_event(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageDelete => self
+                .handler
+                .on_message_delete_event(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageDeleteBulk => self
+                .handler
+                .on_message_delete_bulk(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageReactionAdd => self
+                .handler
+                .on_message_reaction_add(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageReactionRemove => self
+                .handler
+                .on_message_reaction_remove(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageReactionRemoveAll => self
+                .handler
+                .on_message_reaction_remove_all(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessageReactionRemoveEmoji => self
+                .handler
+                .on_message_reaction_remove_emoji(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessagePollVoteAdd => self
+                .handler
+                .on_message_poll_vote_add(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::MessagePollVoteRemove => self
+                .handler
+                .on_message_poll_vote_remove(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::PresenceUpdate => self
+                .handler
+                .on_presence_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::StageInstanceCreate => self
+                .handler
+                .on_stage_instance_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::StageInstanceUpdate => self
+                .handler
+                .on_stage_instance_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::StageInstanceDelete => self
+                .handler
+                .on_stage_instance_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::SubscriptionCreate => self
+                .handler
+                .on_subscription_create(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::SubscriptionUpdate => self
+                .handler
+                .on_subscription_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::SubscriptionDelete => self
+                .handler
+                .on_subscription_delete(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::TypingStart => self.handler.on_typing_start(ctx, dispatch.data.clone()).await,
+            DispatchEventType::UserUpdate => self.handler.on_user_update_event(ctx, dispatch.data.clone()).await,
+            DispatchEventType::VoiceChannelEffectSend => self
+                .handler
+                .on_voice_channel_effect_send(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::VoiceStateUpdate => self
+                .handler
+                .on_voice_state_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::VoiceServerUpdate => self
+                .handler
+                .on_voice_server_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::WebhooksUpdate => self
+                .handler
+                .on_webhooks_update(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::RelationshipAdd => self
+                .handler
+                .on_relationship_add(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::RelationshipRemove => self
+                .handler
+                .on_relationship_remove(ctx, dispatch.data.clone())
+                .await,
+            DispatchEventType::Unknown(_) => {}
+        }
     }
 }

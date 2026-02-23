@@ -76,12 +76,12 @@ impl ConnectionProperties {
             browser: "Discord Client".to_string(),
             device: "".to_string(),
             system_locale: "en-US".to_string(),
-            browser_version: "27.0.0".to_string(),
-            os_version: "26".to_string(),
+            browser_version: "1.135.0".to_string(),
+            os_version: "26.3.0".to_string(),
             referrer: "".to_string(),
             referring_domain: "".to_string(),
             release_channel: "stable".to_string(),
-            client_build_number: 498109,
+            client_build_number: 500334,
         }
     }
 }
