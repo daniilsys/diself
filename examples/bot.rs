@@ -5,15 +5,8 @@ struct MyBot;
 
 #[async_trait]
 impl EventHandler for MyBot {
-    async fn on_ready(&self, ctx: &Context, user: User) {
-        println!("🤖 {} is ready!", user.tag());
-
-        let me = ctx
-            .users
-            .get(&ctx.http, user.id)
-            .await
-            .expect("Failed to fetch user info");
-        println!("👤 User: {} (ID: {})", me.tag(), me.id);
+    async fn on_ready(&self, _ctx: &Context, user: User) {
+        println!("🤖 {} is ready!", user.tag())
     }
 
     async fn on_message_create(&self, ctx: &Context, msg: Message) {

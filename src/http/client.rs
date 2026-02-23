@@ -40,6 +40,9 @@ impl HttpClient {
     pub fn new(token: impl Into<String>) -> Self {
         let client = ReqwestClient::builder()
             .timeout(Duration::from_secs(10))
+            .gzip(true)
+            .referer(true)
+            .redirect(reqwest::redirect::Policy::limited(10))
             .build()
             .expect("Failed to create HTTP client");
 
@@ -115,39 +118,54 @@ impl HttpClient {
         body: Option<&T>,
         captcha_key: Option<String>,
     ) -> Result<Value> {
+        // Add a small delay to mimic human behavior (anti-bot measure)
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
         // Keep this heartbeat id fresh for internal analytics/debug use.
-        let _heartbeat_session_id = self.rotate_heartbeat_session_if_needed();
+        let heartbeat_session_id = self.rotate_heartbeat_session_if_needed();
 
         let mut request = self
             .client
             .request(method.clone(), url)
             .header("Authorization", &self.token)
-            .header("User-Agent",   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36");
+            .header("User-Agent",   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36")
+            .header("Accept", "*/*")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("Content-Type", "application/json")
+            .header("Origin", "https://discord.com")
+            .header("Referer", "https://discord.com/channels/@me")
+            .header("Sec-Fetch-Dest", "empty")
+            .header("Sec-Fetch-Mode", "cors")
+            .header("Sec-Fetch-Site", "same-origin")
+            .header("X-Discord-Locale", "en-US")
+            .header("X-Discord-Timezone", "America/New_York");
 
         let x_super_properties = serde_json::json!({
           "os": "Mac OS X",
-          "browser": "Discord Client",
-          "release_channel": "stable",
-          "client_version": "0.0.377",
-          "os_version": "26.3.0",
-          "os_arch": "arm64",
-          "app_arch": "arm64",
+          "browser": "Chrome",
+          "device": "",
           "system_locale": "en-US",
-          "has_client_mods": false,
-          "client_launch_id": "c1f90baa-5390-43bd-a5eb-36a77d0c17c1",
-          "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
-          "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.171 Chrome/134.0.6998.179 Electron/35.1.5 Safari/537.36",
-          "browser_version": "35.1.5",
-          "os_sdk_version": "24",
+          "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+          "browser_version": "145.0.0.0",
+          "os_version": "10.15.7",
+          "referrer": "https://www.google.com/",
+          "referring_domain": "www.google.com",
+          "referrer_current": "https://www.google.com/",
+          "referring_domain_current": "www.google.com",
+          "search_engine_current": "google",
+          "release_channel": "stable",
           "client_build_number": 500334,
-          "native_build_number": null,
           "client_event_source": null,
-          "client_heartbeat_session_id": self.analytics_heartbeat_session_id(),
+          "has_client_mods": false,
+          "client_launch_id": generate_uuid_v4_like(),
+          "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
+          "client_heartbeat_session_id": heartbeat_session_id
         });
 
         request = request.header(
             "X-Super-Properties",
-            base64::engine::general_purpose::STANDARD.encode(x_super_properties.to_string()),
+            base64::engine::general_purpose::STANDARD
+                .encode(serde_json::to_string(&x_super_properties).unwrap()),
         );
 
         // Prepare body with captcha key if provided
@@ -212,14 +230,53 @@ impl HttpClient {
         captcha_rqtoken: Option<String>,
     ) -> Result<Value> {
         // Keep this heartbeat id fresh for internal analytics/debug use.
-        let _heartbeat_session_id = self.rotate_heartbeat_session_if_needed();
+        let heartbeat_session_id = self.rotate_heartbeat_session_if_needed();
 
         let mut request = self
             .client
             .request(method, url)
             .header("Authorization", &self.token)
-            .header("User-Agent", "Discord Client (diself, 0.1.0)")
+            .header("User-Agent",   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36")
+            .header("Accept", "*/*")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("Content-Type", "application/json")
+            .header("Origin", "https://discord.com")
+            .header("Referer", "https://discord.com/channels/@me")
+            .header("Sec-Fetch-Dest", "empty")
+            .header("Sec-Fetch-Mode", "cors")
+            .header("Sec-Fetch-Site", "same-origin")
+            .header("X-Discord-Locale", "en-US")
+            .header("X-Discord-Timezone", "America/New_York")
             .header("X-Captcha-Key", captcha_key.clone().unwrap_or_default());
+
+        // Add X-Super-Properties header (critical for Discord API)
+        let x_super_properties = serde_json::json!({
+          "os": "Mac OS X",
+          "browser": "Chrome",
+          "device": "",
+          "system_locale": "en-US",
+          "browser_user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+          "browser_version": "145.0.0.0",
+          "os_version": "10.15.7",
+          "referrer": "https://www.google.com/",
+          "referring_domain": "www.google.com",
+          "referrer_current": "https://www.google.com/",
+          "referring_domain_current": "www.google.com",
+          "search_engine_current": "google",
+          "release_channel": "stable",
+          "client_build_number": 500334,
+          "client_event_source": null,
+          "has_client_mods": false,
+          "client_launch_id": generate_uuid_v4_like(),
+          "launch_signature": "477bea01-90cb-422d-9a38-aaa66ed3e25e",
+          "client_heartbeat_session_id": heartbeat_session_id
+        });
+
+        request = request.header(
+            "X-Super-Properties",
+            base64::engine::general_purpose::STANDARD
+                .encode(serde_json::to_string(&x_super_properties).unwrap()),
+        );
 
         if let Some(session_id) = captcha_session_id {
             request = request.header("X-Captcha-Session-Id", session_id);
